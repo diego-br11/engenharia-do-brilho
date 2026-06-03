@@ -7,19 +7,28 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <script>
-  function initMap() {
-    const input = document.getElementById('endereco');
-    const autocomplete = new google.maps.places.Autocomplete(input, {
+  async function initMap() {
+    const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
+
+    const placeAutocomplete = new PlaceAutocompleteElement({
       componentRestrictions: { country: 'br' },
-      fields: ['geometry', 'formatted_address', 'address_components'],
       types: ['address']
     });
-    autocomplete.addListener('place_changed', () => {
-      selectedPlace = autocomplete.getPlace();
+
+    placeAutocomplete.id = 'place-autocomplete-input';
+
+    const container = document.getElementById('autocomplete-container');
+    container.appendChild(placeAutocomplete);
+
+    placeAutocomplete.addEventListener('gmp-placeselect', async (event) => {
+      const place = event.place;
+      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'] });
+      selectedPlace = place;
     });
   }
+  initMap();
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi-2pJvxotdm6Mz4Rqi8cJ7CMVZblrAT4&libraries=places&language=pt-BR&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi-2pJvxotdm6Mz4Rqi8cJ7CMVZblrAT4&libraries=places&language=pt-BR&v=beta" async defer></script>
 <style>
   :root {
     --blue: #1E90FF;
@@ -511,6 +520,20 @@
   }
 
   /* Google Places Autocomplete */
+  #autocomplete-container {
+    --gmp-mat-input-border-radius: 8px;
+  }
+  gmp-place-autocomplete {
+    width: 100%;
+  }
+  gmp-place-autocomplete input,
+  .pac-target-input {
+    width: 100%; padding: 14px 16px;
+    background: var(--dark4); border: 1px solid rgba(30,144,255,.2);
+    border-radius: 8px; color: var(--white);
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem;
+    outline: none; transition: border-color .2s;
+  }
   .pac-container {
     background: var(--dark3);
     border: 1px solid rgba(30,144,255,.3);
@@ -530,7 +553,6 @@
   .pac-item:hover, .pac-item-selected { background: rgba(30,144,255,.12); color: var(--white); }
   .pac-item-query { color: var(--white); font-weight: 600; }
   .pac-icon { display: none; }
-  .pac-logo::after { display: none !important; }
   .spinner {
     display: inline-block; width: 18px; height: 18px;
     border: 2px solid rgba(255,255,255,.3);
@@ -736,13 +758,13 @@
   <div class="section-inner">
     <p class="section-label">Estimativa de Deslocamento</p>
     <h2 class="section-title">Quanto custa<br>a visita até você?</h2>
-    <p class="section-sub">Digite seu endereço e calcule o custo de deslocamento. A tarifa é R$1,29/km (ida + volta).</p>
+    <p class="section-sub">Digite seu endereço e calcule o custo estimado de deslocamento até você.</p>
 
     <div class="calc-wrapper">
       <div class="calc-form-area">
         <h3>Calcular Deslocamento</h3>
-        <label for="endereco">Seu endereço completo</label>
-        <input type="text" id="endereco" placeholder="Ex: Avenida Paulista, 1000, Bela Vista, São Paulo">
+        <label for="autocomplete-container">Seu endereço completo</label>
+        <div id="autocomplete-container" style="width:100%;"></div>
 
         <button class="calc-btn" id="btnCalc" onclick="calcular()">
           Estimar custo de visita
@@ -795,7 +817,7 @@
 <section id="cta">
   <div class="cta-inner">
     <h2>Agende agora e veja seu carro <span>brilhar de verdade</span></h2>
-    <p>Consulte nossas promoções e tarifas de deslocamento. Atendimento pelo WhatsApp, rápido e sem enrolação.</p>
+    <p>Consulte nossas promoções e agende pelo WhatsApp, rápido e sem enrolação.</p>
     <a href="https://wa.me/5511958524819" target="_blank" class="btn-primary" style="font-size:1.2rem;padding:18px 48px">
       📲 (11) 95852-4819
     </a>
@@ -847,8 +869,8 @@
 
   function formatAddress(place) {
     const comps = {};
-    (place.address_components || []).forEach(c => {
-      c.types.forEach(t => comps[t] = c.long_name);
+    (place.addressComponents || []).forEach(c => {
+      c.types.forEach(t => comps[t] = c.longText);
     });
     const parts = [];
     if (comps.route) {
@@ -860,7 +882,7 @@
     if (comps.administrative_area_level_2) parts.push(comps.administrative_area_level_2);
     if (comps.administrative_area_level_1) parts.push(comps.administrative_area_level_1);
     if (comps.postal_code) parts.push('CEP ' + comps.postal_code);
-    return parts.length ? parts.join(', ') : place.formatted_address;
+    return parts.length ? parts.join(', ') : place.formattedAddress;
   }
 
   async function calcular() {
@@ -880,8 +902,8 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Calculando...';
 
-    const lat = selectedPlace.geometry.location.lat();
-    const lng = selectedPlace.geometry.location.lng();
+    const lat = selectedPlace.location.lat();
+    const lng = selectedPlace.location.lng();
     const distKm = haversine(ORIGIN_LAT, ORIGIN_LNG, lat, lng);
     const custo = distKm * 2 * PRICE_PER_KM;
     const custoEl = document.getElementById('rCusto');
