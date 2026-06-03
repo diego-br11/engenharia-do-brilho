@@ -6,29 +6,7 @@
 <title>Engenharia do Brilho – Limpeza Técnica Automotiva</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-<script>
-  async function initMap() {
-    const { PlaceAutocompleteElement } = await google.maps.importLibrary('places');
 
-    const placeAutocomplete = new PlaceAutocompleteElement({
-      componentRestrictions: { country: 'br' },
-      types: ['address']
-    });
-
-    placeAutocomplete.id = 'place-autocomplete-input';
-
-    const container = document.getElementById('autocomplete-container');
-    container.appendChild(placeAutocomplete);
-
-    placeAutocomplete.addEventListener('gmp-placeselect', async (event) => {
-      const place = event.place;
-      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'] });
-      selectedPlace = place;
-    });
-  }
-  initMap();
-</script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi-2pJvxotdm6Mz4Rqi8cJ7CMVZblrAT4&libraries=places&language=pt-BR&v=beta" async defer></script>
 <style>
   :root {
     --blue: #1E90FF;
@@ -763,8 +741,8 @@
     <div class="calc-wrapper">
       <div class="calc-form-area">
         <h3>Calcular Deslocamento</h3>
-        <label for="autocomplete-container">Seu endereço completo</label>
-        <div id="autocomplete-container" style="width:100%;"></div>
+        <label for="endereco">Seu endereço completo</label>
+        <input type="text" id="endereco" placeholder="Ex: Avenida Paulista, 1000, Bela Vista, São Paulo">
 
         <button class="calc-btn" id="btnCalc" onclick="calcular()">
           Estimar custo de visita
@@ -851,6 +829,7 @@
   const _a = atob('LTIzLjUzMDI=');
   const _b = atob('LTQ2LjUzODI=');
   const _c = atob('MS4yOQ==');
+  const _k = atob('QUl6YVN5QWktMnBKdnhvdGRtNk16NFJxaThjSjdDTVZaYmxyQVQ0');
   const ORIGIN_LAT = parseFloat(_a);
   const ORIGIN_LNG = parseFloat(_b);
   const PRICE_PER_KM = parseFloat(_c);
@@ -865,66 +844,92 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
-  let selectedPlace = null;
+  async function geocodeGoogle(address) {
+    const encoded = encodeURIComponent(address + ', Brasil');
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&key=${_k}&language=pt-BR&region=br`;
+    try {
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (data.status !== 'OK' || !data.results.length) return null;
+      const result = data.results[0];
+      const loc = result.geometry.location;
 
-  function formatAddress(place) {
-    const comps = {};
-    (place.addressComponents || []).forEach(c => {
-      c.types.forEach(t => comps[t] = c.longText);
-    });
-    const parts = [];
-    if (comps.route) {
-      let rua = comps.route;
-      if (comps.street_number) rua += ', ' + comps.street_number;
-      parts.push(rua);
+      // Monta endereço formatado com CEP
+      const comps = {};
+      result.address_components.forEach(c => {
+        c.types.forEach(t => comps[t] = c.long_name);
+      });
+      const parts = [];
+      if (comps.route) {
+        let rua = comps.route;
+        if (comps.street_number) rua += ', ' + comps.street_number;
+        parts.push(rua);
+      }
+      if (comps.sublocality_level_1) parts.push(comps.sublocality_level_1);
+      else if (comps.neighborhood) parts.push(comps.neighborhood);
+      if (comps.administrative_area_level_2) parts.push(comps.administrative_area_level_2);
+      if (comps.administrative_area_level_1) parts.push(comps.administrative_area_level_1);
+      if (comps.postal_code) parts.push('CEP ' + comps.postal_code);
+      const display = parts.length ? parts.join(', ') : result.formatted_address;
+
+      return { lat: loc.lat, lng: loc.lng, display };
+    } catch {
+      return null;
     }
-    if (comps.sublocality_level_1 || comps.neighborhood) parts.push(comps.sublocality_level_1 || comps.neighborhood);
-    if (comps.administrative_area_level_2) parts.push(comps.administrative_area_level_2);
-    if (comps.administrative_area_level_1) parts.push(comps.administrative_area_level_1);
-    if (comps.postal_code) parts.push('CEP ' + comps.postal_code);
-    return parts.length ? parts.join(', ') : place.formattedAddress;
   }
 
   async function calcular() {
     const btn = document.getElementById('btnCalc');
     const errEl = document.getElementById('calcError');
     const resEl = document.getElementById('calcResult');
+    const addr = document.getElementById('endereco').value.trim();
 
     errEl.classList.remove('visible');
     resEl.classList.remove('visible');
 
-    if (!selectedPlace) {
-      errEl.textContent = 'Selecione um endereço na lista de sugestões.';
+    if (!addr) {
+      errEl.textContent = 'Por favor, informe seu endereço.';
       errEl.classList.add('visible');
       return;
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Calculando...';
+    btn.innerHTML = '<span class="spinner"></span>Buscando endereço...';
 
-    const lat = selectedPlace.location.lat();
-    const lng = selectedPlace.location.lng();
-    const distKm = haversine(ORIGIN_LAT, ORIGIN_LNG, lat, lng);
-    const custo = distKm * 2 * PRICE_PER_KM;
-    const custoEl = document.getElementById('rCusto');
+    try {
+      const geo = await geocodeGoogle(addr);
+      if (!geo) throw new Error('not found');
 
-    document.getElementById('confirmAddr').textContent = formatAddress(selectedPlace);
+      const distKm = haversine(ORIGIN_LAT, ORIGIN_LNG, geo.lat, geo.lng);
+      const custo = distKm * 2 * PRICE_PER_KM;
+      const custoEl = document.getElementById('rCusto');
 
-    if (custo <= 10) {
-      custoEl.textContent = '🎁 Cortesia';
-      custoEl.style.fontSize = '1.6rem';
-      custoEl.style.color = '#4cde80';
-    } else {
-      const arredondado = Math.ceil(custo / 5) * 5;
-      custoEl.textContent = 'R$ ' + arredondado.toFixed(2).replace('.',',');
-      custoEl.style.fontSize = '';
-      custoEl.style.color = '';
+      document.getElementById('confirmAddr').textContent = geo.display;
+
+      if (custo <= 10) {
+        custoEl.textContent = '🎁 Cortesia';
+        custoEl.style.fontSize = '1.6rem';
+        custoEl.style.color = '#4cde80';
+      } else {
+        const arredondado = Math.ceil(custo / 5) * 5;
+        custoEl.textContent = 'R$ ' + arredondado.toFixed(2).replace('.',',');
+        custoEl.style.fontSize = '';
+        custoEl.style.color = '';
+      }
+
+      resEl.classList.add('visible');
+    } catch(e) {
+      errEl.textContent = 'Não foi possível encontrar o endereço. Tente incluir bairro e cidade.';
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Estimar custo de visita';
     }
-
-    resEl.classList.add('visible');
-    btn.disabled = false;
-    btn.innerHTML = 'Estimar custo de visita';
   }
+
+  document.getElementById('endereco').addEventListener('keydown', e => {
+    if (e.key === 'Enter') calcular();
+  });
 
   document.getElementById('endereco').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); calcular(); }
