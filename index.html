@@ -846,33 +846,25 @@
 
   async function geocodeGoogle(address) {
     const encoded = encodeURIComponent(address + ', Brasil');
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&key=${_k}&language=pt-BR&region=br`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=${encoded}&accept-language=pt-BR`;
     try {
       const resp = await fetch(url);
       const data = await resp.json();
-      if (data.status !== 'OK' || !data.results.length) return null;
-      const result = data.results[0];
-      const loc = result.geometry.location;
-
-      // Monta endereço formatado com CEP
-      const comps = {};
-      result.address_components.forEach(c => {
-        c.types.forEach(t => comps[t] = c.long_name);
-      });
+      if (!Array.isArray(data) || !data.length) return null;
+      const item = data[0];
+      const a = item.address || {};
       const parts = [];
-      if (comps.route) {
-        let rua = comps.route;
-        if (comps.street_number) rua += ', ' + comps.street_number;
+      if (a.road) {
+        let rua = a.road;
+        if (a.house_number) rua += ', ' + a.house_number;
         parts.push(rua);
       }
-      if (comps.sublocality_level_1) parts.push(comps.sublocality_level_1);
-      else if (comps.neighborhood) parts.push(comps.neighborhood);
-      if (comps.administrative_area_level_2) parts.push(comps.administrative_area_level_2);
-      if (comps.administrative_area_level_1) parts.push(comps.administrative_area_level_1);
-      if (comps.postal_code) parts.push('CEP ' + comps.postal_code);
-      const display = parts.length ? parts.join(', ') : result.formatted_address;
-
-      return { lat: loc.lat, lng: loc.lng, display };
+      if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
+      if (a.city || a.town) parts.push(a.city || a.town);
+      if (a.state) parts.push(a.state);
+      if (a.postcode) parts.push('CEP ' + a.postcode);
+      const display = parts.length ? parts.join(', ') : item.display_name;
+      return { lat: parseFloat(item.lat), lng: parseFloat(item.lon), display };
     } catch {
       return null;
     }
