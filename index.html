@@ -718,25 +718,16 @@
           Não foi possível encontrar o endereço. Tente incluir cidade e estado.
         </div>
 
-        <!-- Etapa 1: confirmação do endereço -->
-        <div class="calc-confirm" id="calcConfirm">
-          <p style="font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Endereço encontrado — é o seu?</p>
-          <div id="confirmAddr" style="background:var(--dark4);border:1px solid rgba(30,144,255,.25);border-radius:8px;padding:14px 16px;font-size:.95rem;color:var(--white);line-height:1.5;margin-bottom:10px;"></div>
-          <p style="font-size:.8rem;color:#f0a500;margin-bottom:14px;line-height:1.5;">⚠️ O valor exibido é uma <strong>estimativa</strong>. O custo real de deslocamento será confirmado durante o agendamento.</p>
-          <div style="display:flex;gap:10px;">
-            <button class="calc-btn" id="btnSim" onclick="confirmar()" style="margin-top:0;flex:1;">✅ Sim, é esse</button>
-            <button onclick="negar()" style="flex:1;margin-top:0;padding:14px;background:transparent;border:1px solid rgba(30,144,255,.3);border-radius:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='rgba(30,144,255,.3)'">❌ Não, corrigir</button>
-          </div>
-        </div>
-
-        <!-- Etapa 2: resultado -->
+        <!-- Resultado -->
         <div class="calc-result" id="calcResult">
+          <p style="font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Calculado com base no endereço</p>
+          <div id="confirmAddr" style="background:var(--dark4);border:1px solid rgba(30,144,255,.15);border-radius:8px;padding:12px 14px;font-size:.88rem;color:var(--text);line-height:1.5;margin-bottom:16px;"></div>
           <div class="result-total">
             <span class="result-total-label">Custo estimado de visita</span>
             <span class="result-total-value" id="rCusto">—</span>
           </div>
           <p class="calc-info">
-            ⚠️ Valor estimado com base em distância linear. O custo real pode variar conforme rota. Consulte antes de agendar para confirmação.
+            ⚠️ O valor exibido é uma <strong>estimativa</strong>. O custo real de deslocamento será confirmado durante o agendamento.
           </p>
         </div>
       </div>
@@ -857,12 +848,10 @@
     const btn = document.getElementById('btnCalc');
     const errEl = document.getElementById('calcError');
     const resEl = document.getElementById('calcResult');
-    const confirmEl = document.getElementById('calcConfirm');
     const addr = document.getElementById('endereco').value.trim();
 
     errEl.classList.remove('visible');
     resEl.classList.remove('visible');
-    confirmEl.classList.remove('visible');
     pendingGeo = null;
 
     if (!addr) {
@@ -878,9 +867,24 @@
       const geo = await geocodeFallback(addr);
       if (!geo) throw new Error('not found');
 
-      pendingGeo = geo;
+      const distKm = haversine(ORIGIN_LAT, ORIGIN_LNG, geo.lat, geo.lng);
+      const custo = distKm * 2 * PRICE_PER_KM;
+      const custoEl = document.getElementById('rCusto');
+
       document.getElementById('confirmAddr').textContent = geo.display;
-      confirmEl.classList.add('visible');
+
+      if (custo <= 10) {
+        custoEl.textContent = '🎁 Cortesia';
+        custoEl.style.fontSize = '1.6rem';
+        custoEl.style.color = '#4cde80';
+      } else {
+        const arredondado = Math.ceil(custo / 5) * 5;
+        custoEl.textContent = 'R$ ' + arredondado.toFixed(2).replace('.',',');
+        custoEl.style.fontSize = '';
+        custoEl.style.color = '';
+      }
+
+      resEl.classList.add('visible');
     } catch(e) {
       errEl.textContent = 'Não foi possível encontrar o endereço. Tente incluir bairro, cidade e estado.';
       errEl.classList.add('visible');
@@ -888,34 +892,6 @@
       btn.disabled = false;
       btn.innerHTML = 'Estimar custo de visita';
     }
-  }
-
-  function confirmar() {
-    if (!pendingGeo) return;
-    const distKm = haversine(ORIGIN_LAT, ORIGIN_LNG, pendingGeo.lat, pendingGeo.lng);
-    const custo = distKm * 2 * PRICE_PER_KM;
-    const custoEl = document.getElementById('rCusto');
-    if (custo <= 10) {
-      custoEl.textContent = '🎁 Cortesia';
-      custoEl.style.fontSize = '1.6rem';
-      custoEl.style.color = '#4cde80';
-    } else {
-      const arredondado = Math.ceil(custo / 5) * 5;
-      custoEl.textContent = 'R$ ' + arredondado.toFixed(2).replace('.',',');
-      custoEl.style.fontSize = '';
-      custoEl.style.color = '';
-    }
-    document.getElementById('calcConfirm').classList.remove('visible');
-    document.getElementById('calcResult').classList.add('visible');
-  }
-
-  function negar() {
-    document.getElementById('calcConfirm').classList.remove('visible');
-    document.getElementById('calcResult').classList.remove('visible');
-    const input = document.getElementById('endereco');
-    input.focus();
-    input.select();
-    pendingGeo = null;
   }
 
   document.getElementById('endereco').addEventListener('keydown', e => {
