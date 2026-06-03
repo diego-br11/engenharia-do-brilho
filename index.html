@@ -801,9 +801,12 @@
 
 <script>
   // Coordenadas da Praça da Toco, Vila Matilde – SP
-  const ORIGIN_LAT = -23.5302;
-  const ORIGIN_LNG = -46.5382;
-  const PRICE_PER_KM = 1.29;
+  const _a = atob('LTIzLjUzMDI=');
+  const _b = atob('LTQ2LjUzODI=');
+  const _c = atob('MS4yOQ==');
+  const ORIGIN_LAT = parseFloat(_a);
+  const ORIGIN_LNG = parseFloat(_b);
+  const PRICE_PER_KM = parseFloat(_c);
 
   // Haversine distance em km
   function haversine(lat1, lng1, lat2, lng2) {
