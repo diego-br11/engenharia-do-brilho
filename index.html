@@ -6,7 +6,20 @@
 <title>Engenharia do Brilho – Limpeza Técnica Automotiva</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi-2pJvxotdm6Mz4Rqi8cJ7CMVZblrAT4&libraries=places&language=pt-BR" async defer></script>
+<script>
+  function initMap() {
+    const input = document.getElementById('endereco');
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'br' },
+      fields: ['geometry', 'formatted_address', 'address_components'],
+      types: ['address']
+    });
+    autocomplete.addListener('place_changed', () => {
+      selectedPlace = autocomplete.getPlace();
+    });
+  }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi-2pJvxotdm6Mz4Rqi8cJ7CMVZblrAT4&libraries=places&language=pt-BR&callback=initMap" async defer></script>
 <style>
   :root {
     --blue: #1E90FF;
@@ -831,30 +844,6 @@
   }
 
   let selectedPlace = null;
-
-  function initAutocomplete() {
-    const input = document.getElementById('endereco');
-    const autocomplete = new google.maps.places.Autocomplete(input, {
-      componentRestrictions: { country: 'br' },
-      fields: ['geometry', 'formatted_address', 'address_components'],
-      types: ['address']
-    });
-
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-      if (!place.geometry) return;
-      selectedPlace = place;
-    });
-  }
-
-  window.addEventListener('load', () => {
-    const waitForGoogle = setInterval(() => {
-      if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-        clearInterval(waitForGoogle);
-        initAutocomplete();
-      }
-    }, 100);
-  });
 
   function formatAddress(place) {
     const comps = {};
