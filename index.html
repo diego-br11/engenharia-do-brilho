@@ -299,7 +299,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 48px;
     margin-top: 56px;
-    align-items: start;
+    align-items: stretch;
   }
   @media(max-width:768px){ .calc-wrapper { grid-template-columns: 1fr; } }
 
@@ -766,25 +766,21 @@
         </div>
       </div>
 
-      <div class="calc-info-area">
-        <div class="info-card">
-          <h4>⚠️ Requisitos para o atendimento</h4>
-          <p>Para realizarmos o serviço com segurança e qualidade, você precisará ter disponível:</p>
-          <ul style="margin-top:12px;display:flex;flex-direction:column;gap:10px;list-style:none;">
-            <li style="display:flex;gap:10px;align-items:flex-start;font-size:.92rem;color:var(--text-muted);font-weight:400;">
-              <span style="font-size:1.1rem">🚗</span> <span>Espaço suficiente para abrir as portas do veículo dos dois lados</span>
+      <div class="calc-info-area" style="display:flex;flex-direction:column;">
+        <div class="info-card" style="border-color:rgba(255,193,7,.25);background:linear-gradient(135deg,#1a1f0f 0%,#141824 100%);flex:1;">
+          <h4 style="color:#ffc107;">⚠️ Requisitos para o atendimento</h4>
+          <p style="margin-bottom:4px;">Para realizarmos o serviço com segurança e qualidade, você precisará ter disponível:</p>
+          <ul style="margin-top:14px;display:flex;flex-direction:column;gap:14px;list-style:none;">
+            <li style="display:flex;gap:12px;align-items:flex-start;font-size:1.05rem;color:var(--text);font-weight:600;line-height:1.4;">
+              <span style="font-size:1.4rem;flex-shrink:0;">🚗</span> <span>Espaço suficiente para abrir as portas do veículo dos dois lados</span>
             </li>
-            <li style="display:flex;gap:10px;align-items:flex-start;font-size:.92rem;color:var(--text-muted);font-weight:400;">
-              <span style="font-size:1.1rem">🚿</span> <span>Uma torneira acessível para ligar a mangueira</span>
+            <li style="display:flex;gap:12px;align-items:flex-start;font-size:1.05rem;color:var(--text);font-weight:600;line-height:1.4;">
+              <span style="font-size:1.4rem;flex-shrink:0;">🚿</span> <span>Uma torneira acessível para ligar a mangueira</span>
             </li>
-            <li style="display:flex;gap:10px;align-items:flex-start;font-size:.92rem;color:var(--text-muted);font-weight:400;">
-              <span style="font-size:1.1rem">🔌</span> <span>Tomada 110V próxima para os equipamentos</span>
+            <li style="display:flex;gap:12px;align-items:flex-start;font-size:1.05rem;color:var(--text);font-weight:600;line-height:1.4;">
+              <span style="font-size:1.4rem;flex-shrink:0;">🔌</span> <span>Tomada 110V próxima para os equipamentos</span>
             </li>
           </ul>
-        </div>
-        <div class="info-card">
-          <h4>🤝 Promoções de deslocamento</h4>
-          <p>Clientes próximos podem ter desconto ou isenção do deslocamento em agendamentos combinados. Pergunte no WhatsApp!</p>
         </div>
       </div>
     </div>
