@@ -708,7 +708,7 @@
       <div class="calc-form-area">
         <h3>Calcular Deslocamento</h3>
         <label for="endereco">Seu endereço completo</label>
-        <input type="text" id="endereco" placeholder="Ex: Rua Funchal, 418, Vila Olímpia, São Paulo">
+        <input type="text" id="endereco" placeholder="Ex: Rua das Flores, 123, Jardim Nélia, São Paulo">
 
         <button class="calc-btn" id="btnCalc" onclick="calcular()">
           Estimar custo de visita
@@ -721,7 +721,8 @@
         <!-- Etapa 1: confirmação do endereço -->
         <div class="calc-confirm" id="calcConfirm">
           <p style="font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Endereço encontrado — é o seu?</p>
-          <div id="confirmAddr" style="background:var(--dark4);border:1px solid rgba(30,144,255,.25);border-radius:8px;padding:14px 16px;font-size:.95rem;color:var(--white);line-height:1.5;margin-bottom:16px;"></div>
+          <div id="confirmAddr" style="background:var(--dark4);border:1px solid rgba(30,144,255,.25);border-radius:8px;padding:14px 16px;font-size:.95rem;color:var(--white);line-height:1.5;margin-bottom:10px;"></div>
+          <p style="font-size:.8rem;color:#f0a500;margin-bottom:14px;line-height:1.5;">⚠️ Confira o <strong>bairro e CEP</strong> antes de confirmar. Se estiver errado, clique em "Não" e inclua o bairro no endereço para melhorar a precisão.</p>
           <div style="display:flex;gap:10px;">
             <button class="calc-btn" id="btnSim" onclick="confirmar()" style="margin-top:0;flex:1;">✅ Sim, é esse</button>
             <button onclick="negar()" style="flex:1;margin-top:0;padding:14px;background:transparent;border:1px solid rgba(30,144,255,.3);border-radius:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='rgba(30,144,255,.3)'">❌ Não, corrigir</button>
